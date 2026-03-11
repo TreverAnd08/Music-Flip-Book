@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Music Flip Folder App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .app {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            padding: 24px;
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 20px;
+            position: relative;
+        }
+
+        @media (max-width: 800px) {
+            .app {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .header {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .header h1 { color: #667eea; font-size: 26px; margin-bottom: 4px; }
+        .header p { color: #666; font-size: 14px; }
+
+        .card {
+            background: #f7f7ff;
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        h2 { font-size: 18px; margin-bottom: 8px; color: #333; }
+        h3 { font-size: 15px; margin-bottom: 6px; color: #444; }
+
+        label { font-size: 13px; color: #555; display: block; margin-bottom: 4px; }
+
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .btn {
+            padding: 8px 14px;
+            border-radius: 999px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #eee;
+            color: #555;
+        }
+
+        .status {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+            background: #ccc;
+        }
+
+        .status-dot.on { background: #4caf50; }
+
+        .flex-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .upload-label {
+            display: inline-block;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: #eef;
+            color: #667eea;
+            cursor: pointer;
+            font-size: 13px;
+            margin-top: 6px;
+        }
+
+        .upload-label input { display: none; }
+
+        .music-list {
+            margin-top: 10px;
+            max-height: 220px;
+            overflow-y: auto;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            background: white;
+            padding: 6px;
+        }
+
+        .music-item {
+            padding: 6px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .music-item:hover { background: #f0f0ff; }
+        .music-item.active { background: #667eea; color: white; }
+
+        .page-thumbs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .page-thumb {
+            width: 60px;
+            height: 80px;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 2px solid transparent;
+            cursor: pointer;
+            background: #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .page-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .page-thumb.active { border-color: #667eea; }
+
+        .viewer {
+            background: white;
+            border-radius: 12px;
+            padding: 10px;
+            min-height: 260px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .viewer img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 8px;
+        }
+
+        .small {
+            font-size: 11px;
+            color: #777;
+        }
+
+        .mt-8 { margin-top: 8px; }
+        .mt-12 { margin-top: 12px; }
+
+        .footer {
+            grid-column: 1 / -1;
+            text-align: center;
+            font-size: 11px;
+            color: #aaa;
+            margin-top: 6px;
+        }
+
+        .hidden { display: none; }
+
+        /* Sidebar + toggle for student */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 240px;
+            height: 100%;
+            background: white;
+            box-shadow: 4px 0 12px rgba(0,0,0,0.2);
+            padding: 16px;
+            transform: translateX(-260px);
+            transition: 0.3s ease;
+            z-index: 9999;
+        }
+
+        .sidebar.show {
+            transform: translateX(0);
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .sidebar-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .sidebar-item {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            background: #f0f0ff;
+            border: none;
+            border-radius: 8px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .sidebar-toggle {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            z-index: 9998;
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="header">
+        <h1>🎵 Music Flip Folder</h1>
+        <p>Directors control sheet music • Students follow on their phones</p>
+    </div>
+
+    <!-- DIRECTOR SIDE -->
+    <div class="card">
+        <h2>Director</h2>
+
+        <div id="directorAuth">
+            <h3>Login or Create Account</h3>
+
+            <label>Director ID</label>
+            <input type="text" id="dirId" placeholder="Director ID">
+
+            <label>Password</label>
+            <input type="password" id="dirPassword" placeholder="Password">
+
+            <div class="flex-row mt-8">
+                <button class="btn btn-primary" id="btnDirLogin">Login</button>
+                <button class="btn btn-secondary" id="btnDirSignup">Sign Up</button>
+                <button class="btn btn-secondary" id="btnDirLogout" style="display:none;">Logout</button>
+            </div>
+
+            <div class="status" id="dirStatus"></div>
+            <div class="small mt-8">
+                Accounts and music are stored locally in this browser.  
+                Use the same Director ID + password next time to load your library.
+            </div>
+        </div>
+
+        <div id="directorPanel" style="display:none; margin-top:12px;">
+            <div class="flex-row">
+                <div>
+                    <div class="small">Logged in as:</div>
+                    <strong id="dirLabel"></strong>
+                </div>
+                <div style="margin-left:auto; text-align:right;">
+                    <div class="small">Session code</div>
+                    <strong id="sessionCode"></strong>
+                </div>
+            </div>
+
+            <div class="mt-12">
+                <h3>Your Music Library</h3>
+                <label class="upload-label">
+                    📄 Add sheet music (images)
+                    <input type="file" id="musicUpload" accept="image/*" multiple>
+                </label>
+                <div class="small mt-8">
+                    Each upload becomes a piece. Each image is a page.  
+                    Your library is saved for this director account.
+                </div>
+
+                <div class="music-list mt-8" id="musicList"></div>
+            </div>
+
+            <div class="mt-12">
+                <h3>Pages for selected piece</h3>
+                <div class="page-thumbs" id="pageThumbs"></div>
+            </div>
+
+            <div class="mt-12">
+                <h3>What students see</h3>
+                <div class="viewer" id="directorViewer">
+                    <span class="small">Select a piece and page to broadcast.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STUDENT SIDE -->
+    <div class="card">
+        <h2>Student</h2>
+
+        <div>
+            <h3>Join a director</h3>
+            <label>Session code</label>
+            <input type="text" id="studentSession" placeholder="Enter session code">
+            <button class="btn btn-primary mt-8" id="btnStudentJoin">Join</button>
+            <div class="status mt-4">
+                <span class="status-dot" id="studentDot"></span>
+                <span id="studentStatus">Not connected</span>
+            </div>
+        </div>
+
+        <div class="mt-12">
+            <h3>Current page</h3>
+            <div class="viewer" id="studentViewer">
+                <span class="small">Enter the session code your director shows.</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Music Flip Folder • Local prototype (per-director storage in this browser)
+    </div>
+</div>
+
+<!-- Student sidebar + toggle -->
+<div id="studentSidebar" class="sidebar">
+    <div class="sidebar-header">
+        <h3>Menu</h3>
+        <button id="closeSidebar" class="sidebar-close">✖</button>
+    </div>
+    <button class="sidebar-item" id="goHome">🏠 Home</button>
+    <button class="sidebar-item" id="joinAnother">🔄 Join Another Session</button>
+</div>
+
+<button id="sidebarToggle" class="sidebar-toggle hidden">☰</button>
+
+<script>
+/*
+    Simple local app:
+
+    - Directors have accounts stored in localStorage.
+    - Each director has a library: pieces -> pages (data URLs).
+    - A session code is generated per director login.
+    - Students enter the session code to follow that director.
+    - Sync is simulated in-memory (same device) for now.
+*/
+
+const LS_KEY_ACCOUNTS = "mff_accounts_v1"; // { [directorId]: { password, library } }
+
+function loadAccounts() {
+    try {
+        return JSON.parse(localStorage.getItem(LS_KEY_ACCOUNTS)) || {};
+    } catch {
+        return {};
+    }
+}
+
+function saveAccounts(accounts) {
+    localStorage.setItem(LS_KEY_ACCOUNTS, JSON.stringify(accounts));
+}
+
+// Director auth elements
+const dirIdInput = document.getElementById("dirId");
+const dirPasswordInput = document.getElementById("dirPassword");
+const dirStatus = document.getElementById("dirStatus");
+const btnDirLogin = document.getElementById("btnDirLogin");
+const btnDirSignup = document.getElementById("btnDirSignup");
+const btnDirLogout = document.getElementById("btnDirLogout");
+const directorPanel = document.getElementById("directorPanel");
+const dirLabel = document.getElementById("dirLabel");
+const sessionCodeEl = document.getElementById("sessionCode");
+
+// Library elements
+const musicUpload = document.getElementById("musicUpload");
+const musicListEl = document.getElementById("musicList");
+const pageThumbsEl = document.getElementById("pageThumbs");
+const directorViewer = document.getElementById("directorViewer");
+
+// Student elements
+const studentSessionInput = document.getElementById("studentSession");
+const btnStudentJoin = document.getElementById("btnStudentJoin");
+const studentStatus = document.getElementById("studentStatus");
+const studentDot = document.getElementById("studentDot");
+const studentViewer = document.getElementById("studentViewer");
+
+// Sidebar elements
+const sidebar = document.getElementById("studentSidebar");
+const sidebarToggle = document.getElementById("sidebarToggle");
+const closeSidebar = document.getElementById("closeSidebar");
+const goHomeBtn = document.getElementById("goHome");
+const joinAnotherBtn = document.getElementById("joinAnother");
+
+let accounts = loadAccounts();
+let currentDirector = null; // { id, sessionCode }
+let currentLibrary = [];    // [{ id, name, pages: [dataUrl] }]
+let currentPieceId = null;
+let currentPageIndex = null;
+
+// in-memory sessions (same-device demo)
+const sessions = {}; // { sessionCode: { directorId, currentPieceId, currentPageIndex, library } }
+
+function makeSessionCode(id) {
+    return id.slice(0, 4).toUpperCase() + "-" + Math.floor(1000 + Math.random()*9000);
+}
+
+function showDirectorState() {
+    if (!currentDirector) {
+        directorPanel.style.display = "none";
+        btnDirLogout.style.display = "none";
+        dirStatus.textContent = "";
+        return;
+    }
+    directorPanel.style.display = "block";
+    btnDirLogout.style.display = "inline-block";
+    dirLabel.textContent = currentDirector.id;
+    sessionCodeEl.textContent = currentDirector.sessionCode;
+    dirStatus.textContent = "Logged in. Library loaded.";
+}
+
+// Signup
+btnDirSignup.onclick = () => {
+    const id = dirIdInput.value.trim();
+    const pw = dirPasswordInput.value;
+
+    if (!id || !pw) {
+        dirStatus.textContent = "Enter both ID and password to sign up.";
+        return;
+    }
+
+    if (accounts[id]) {
+        dirStatus.textContent = "That director ID already exists.";
+        return;
+    }
+
+    accounts[id] = { password: pw, library: [] };
+    saveAccounts(accounts);
+
+    dirStatus.textContent = "Account created. You can now log in.";
+};
+
+// Login
+btnDirLogin.onclick = () => {
+    const id = dirIdInput.value.trim();
+    const pw = dirPasswordInput.value;
+
+    if (!id || !pw) {
+        dirStatus.textContent = "Enter both Director ID and password.";
+        return;
+    }
+
+    let acc = accounts[id];
+    if (!acc) {
+        dirStatus.textContent = "No account found. Use Sign Up to create one.";
+        return;
+    } else {
+        if (acc.password !== pw) {
+            dirStatus.textContent = "Incorrect password.";
+            return;
+        }
+        dirStatus.textContent = "Logged in.";
+    }
+
+    currentDirector = {
+        id,
+        sessionCode: makeSessionCode(id)
+    };
+    currentLibrary = acc.library || [];
+    currentPieceId = null;
+    currentPageIndex = null;
+    renderLibrary();
+    renderPages();
+    renderDirectorViewer();
+
+    sessions[currentDirector.sessionCode] = {
+        directorId: id,
+        currentPieceId,
+        currentPageIndex,
+        library: currentLibrary
+    };
+
+    showDirectorState();
+};
+
+// Logout
+btnDirLogout.onclick = () => {
+    currentDirector = null;
+    currentLibrary = [];
+    currentPieceId = null;
+    currentPageIndex = null;
+    renderLibrary();
+    renderPages();
+    renderDirectorViewer();
+    showDirectorState();
+};
+
+// Library management
+musicUpload.onchange = async (e) => {
+    if (!currentDirector) {
+        alert("Log in as a director first.");
+        musicUpload.value = "";
+        return;
+    }
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    const pieceName = prompt("Name for this piece (e.g., 'Fight Song'):", files[0].name) || "Untitled Piece";
+
+    const pages = [];
+    for (const file of files) {
+        const dataUrl = await fileToDataURL(file);
+        pages.push(dataUrl);
+    }
+
+    const piece = {
+        id: "piece_" + Date.now() + "_" + Math.floor(Math.random()*10000),
+        name: pieceName,
+        pages
+    };
+
+    currentLibrary.push(piece);
+    saveCurrentLibrary();
+    renderLibrary();
+    selectPiece(piece.id);
+    musicUpload.value = "";
+};
+
+function fileToDataURL(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+function saveCurrentLibrary() {
+    if (!currentDirector) return;
+    accounts[currentDirector.id].library = currentLibrary;
+    saveAccounts(accounts);
+
+    if (currentDirector && sessions[currentDirector.sessionCode]) {
+        sessions[currentDirector.sessionCode].library = currentLibrary;
+    }
+}
+
+function renderLibrary() {
+    musicListEl.innerHTML = "";
+    if (!currentLibrary.length) {
+        musicListEl.innerHTML = "<div class='small'>No pieces yet. Upload to add.</div>";
+        return;
+    }
+
+    currentLibrary.forEach(piece => {
+        const div = document.createElement("div");
+        div.className = "music-item";
+        if (piece.id === currentPieceId) div.classList.add("active");
+        div.innerHTML = `
+            <span>${piece.name}</span>
+            <span class="small">${piece.pages.length} page(s)</span>
+        `;
+        div.onclick = () => selectPiece(piece.id);
+        musicListEl.appendChild(div);
+    });
+}
+
+function selectPiece(pieceId) {
+    currentPieceId = pieceId;
+    currentPageIndex = 0;
+    renderLibrary();
+    renderPages();
+    renderDirectorViewer();
+    updateSessionState();
+}
+
+function renderPages() {
+    pageThumbsEl.innerHTML = "";
+    const piece = currentLibrary.find(p => p.id === currentPieceId);
+    if (!piece) {
+        pageThumbsEl.innerHTML = "<span class='small'>Select a piece to see pages.</span>";
+        return;
+    }
+
+    piece.pages.forEach((pageUrl, index) => {
+        const div = document.createElement("div");
+        div.className = "page-thumb";
+        if (index === currentPageIndex) div.classList.add("active");
+
+        const img = document.createElement("img");
+        img.src = pageUrl;
+        div.appendChild(img);
+
+        div.onclick = () => {
+            currentPageIndex = index;
+            renderPages();
+            renderDirectorViewer();
+            updateSessionState();
+        };
+
+        pageThumbsEl.appendChild(div);
+    });
+}
+
+function renderDirectorViewer() {
+    directorViewer.innerHTML = "";
+    const piece = currentLibrary.find(p => p.id === currentPieceId);
+    if (!piece || currentPageIndex == null || !piece.pages[currentPageIndex]) {
+        directorViewer.innerHTML = "<span class='small'>Select a piece and page to broadcast.</span>";
+        return;
+    }
+    const img = document.createElement("img");
+    img.src = piece.pages[currentPageIndex];
+    directorViewer.appendChild(img);
+}
+
+function updateSessionState() {
+    if (!currentDirector) return;
+    const sess = sessions[currentDirector.sessionCode];
+    if (!sess) return;
+    sess.currentPieceId = currentPieceId;
+    sess.currentPageIndex = currentPageIndex;
+}
+
+// Student side
+let studentSession = null;
+
+btnStudentJoin.onclick = async () => {
+    const code = studentSessionInput.value.trim();
+    if (!code) {
+        studentStatus.textContent = "Enter a session code.";
+        studentDot.classList.remove("on");
+        return;
+    }
+
+    const sess = sessions[code];
+    if (!sess) {
+        studentStatus.textContent = "No active director with that code (on this device).";
+        studentDot.classList.remove("on");
+        return;
+    }
+
+    studentSession = code;
+    studentStatus.textContent = "Connected to director: " + sess.directorId;
+    studentDot.classList.add("on");
+
+    await enterFullscreenLandscape();
+    openStudentViewer();
+    renderStudentView();
+};
+
+function renderStudentView() {
+    if (!studentSession) return;
+    const sess = sessions[studentSession];
+    if (!sess) return;
+
+    const piece = (sess.library || []).find(p => p.id === sess.currentPieceId);
+    if (!piece || sess.currentPageIndex == null || !piece.pages[sess.currentPageIndex]) {
+        studentViewer.innerHTML = "<span class='small'>Director has not selected a page yet.</span>";
+        return;
+    }
+
+    studentViewer.innerHTML = "";
+    const img = document.createElement("img");
+    img.src = piece.pages[sess.currentPageIndex];
+    studentViewer.appendChild(img);
+}
+
+// Polling to simulate live updates
+setInterval(() => {
+    if (studentSession) {
+        renderStudentView();
+    }
+}, 800);
+
+// Fullscreen + landscape
+async function enterFullscreenLandscape() {
+    const elem = document.documentElement;
+
+    try {
+        if (elem.requestFullscreen) {
+            await elem.requestFullscreen();
+        }
+    } catch (e) {
+        console.warn("Fullscreen not supported", e);
+    }
+
+    if (screen.orientation && screen.orientation.lock) {
+        try {
+            await screen.orientation.lock("landscape");
+        } catch (e) {
+            console.warn("Orientation lock not supported", e);
+        }
+    }
+}
+
+// Sidebar behavior
+sidebarToggle.onclick = () => sidebar.classList.add("show");
+closeSidebar.onclick = () => sidebar.classList.remove("show");
+
+goHomeBtn.onclick = () => {
+    sidebar.classList.remove("show");
+    location.reload();
+};
+
+joinAnotherBtn.onclick = () => {
+    sidebar.classList.remove("show");
+    studentViewer.innerHTML = "<span class='small'>Enter a session code.</span>";
+    studentStatus.textContent = "Not connected";
+    studentDot.classList.remove("on");
+    studentSession = null;
+};
+
+// Show sidebar toggle when in student viewing mode
+function openStudentViewer() {
+    sidebarToggle.classList.remove("hidden");
+}
+</script>
+</body>
+</html>
